@@ -9,6 +9,7 @@
 
 import Foundation
 import EvolutionMetadataModel
+import os.signpost
 
 struct PreviousResultsFetcher {
     
@@ -109,7 +110,16 @@ struct GitHubFetcher {
     
     // Note that fetching proposal contents does not use GitHub API endponts
     static func fetchProposalContents(from url: URL) async throws -> String {
+        
+        let signposter = OSSignposter(subsystem: "swift-evolution-metadata-extractor", category: "Asset Loadingf")
+        let intervalName: StaticString = "Loading Proposal"
+        let signpostID = signposter.makeSignpostID()
+        let signpostState = signposter.beginInterval(intervalName, id: signpostID, "\(url.lastPathComponent, privacy: .public)")
+
         let (data, _) =  try await URLSession.customized.data(from: url)
+        
+        defer { signposter.endInterval(intervalName, signpostState, "Bytes downloaded: \(data.count, format: .byteCount)") }
+
         return String(decoding: data, as: UTF8.self)
     }
         
